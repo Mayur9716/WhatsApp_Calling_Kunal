@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calling Admin</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --card: #fff; --text: #1a1a1a; --muted: #6b7280; --line: #eceef1;
+    --purple: #6f3dbf; --blue: #1e88ff; --green: #04943a;
+    --ok-bg: #e6f6ec; --ok-text: #14602f; --err-bg: #fff1c9; --err-text: #7a4b00;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 16px; }
+  .card { background: var(--card); border-radius: 12px; padding: 18px;
+    box-shadow: 0 1px 6px rgba(0,0,0,.08); margin-bottom: 16px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 17px; margin: 0 0 12px; }
+  p.muted, .muted { color: var(--muted); font-size: 13px; }
+  input[type=password], input[type=date], input[type=number], input[type=file] {
+    padding: 10px; font-size: 15px; border: 1px solid #d5d8dd; border-radius: 6px; background: #fff; max-width: 100%; }
+  button { padding: 10px 16px; border: 0; border-radius: 6px; font-size: 15px; color: #fff;
+    background: var(--purple); cursor: pointer; }
+  button.secondary { background: #e7e9ee; color: var(--text); }
+  button.chip { background: #e7e9ee; color: var(--text); padding: 7px 12px; font-size: 13px; }
+  button.chip.active { background: var(--purple); color: #fff; }
+  button:disabled { opacity: .55; cursor: default; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .tabs { display: flex; gap: 8px; margin: 12px 0 16px; }
+  .tabs button { background: #e7e9ee; color: var(--text); }
+  .tabs button.active { background: var(--purple); color: #fff; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .stat { background: #f6f3fc; border-radius: 10px; padding: 14px; }
+  .stat .v { font-size: 26px; font-weight: 700; }
+  .stat .l { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: #fff; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  tr.total td { font-weight: 700; border-top: 2px solid var(--line); }
+  .bars .bar-row { display: flex; align-items: center; gap: 10px; margin: 7px 0; font-size: 14px; }
+  .bars .name { width: 130px; flex: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bars .track { flex: 1; background: #eee9f8; border-radius: 4px; height: 18px; }
+  .bars .fill { background: var(--purple); height: 100%; border-radius: 4px; min-width: 2px; }
+  .bars .n { width: 60px; text-align: right; font-weight: 600; flex: none; }
+  .msg { margin-top: 12px; padding: 12px; border-radius: 6px; font-size: 14px; display: none; }
+  .msg.ok { display: block; background: var(--ok-bg); color: var(--ok-text); }
+  .msg.err { display: block; background: var(--err-bg); color: var(--err-text); }
+  .progress { height: 14px; background: #e7e9ee; border-radius: 7px; overflow: hidden; margin-top: 12px; display: none; }
+  .progress div { height: 100%; width: 0; background: var(--green); transition: width .2s; }
+  .hidden { display: none !important; }
+  .preview td, .preview th { text-align: left; font-size: 13px; }
+  .preview th:first-child, .preview td:first-child { position: static; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== login ===== -->
+  <div id="loginView" class="card" style="max-width:420px;margin:60px auto">
+    <h1>Calling Admin</h1>
+    <p class="muted">Enter the admin password.</p>
+    <div class="row">
+      <input type="password" id="pw" placeholder="Admin password" style="flex:1" autocomplete="current-password">
+      <button id="loginBtn" type="button">Open</button>
+    </div>
+    <div id="loginMsg" class="msg"></div>
+  </div>
+
+  <!-- ===== app ===== -->
+  <div id="appView" class="hidden">
+    <div class="row" style="justify-content:space-between">
+      <div>
+        <h1>Calling Admin</h1>
+        <div class="muted">Dashboard and data upload</div>
+      </div>
+      <button class="secondary" id="logoutBtn" type="button">Log out</button>
+    </div>
+
+    <div class="tabs">
+      <button id="tabDash" class="active" type="button">Dashboard</button>
+      <button id="tabUpload" type="button">Upload data</button>
+    </div>
+
+    <!-- ===== dashboard ===== -->
+    <div id="dashView">
+      <div class="card">
+        <h2>Date selector</h2>
+        <div class="row" style="margin-bottom:10px">
+          <button class="chip" data-range="today" type="button">Today</button>
+          <button class="chip" data-range="yesterday" type="button">Yesterday</button>
+          <button class="chip" data-range="7" type="button">Last 7 days</button>
+          <button class="chip" data-range="month" type="button">This month</button>
+          <button class="chip" data-range="all" type="button">All time</button>
+        </div>
+        <div class="row">
+          <label>From <input type="date" id="from"></label>
+          <label>To <input type="date" id="to"></label>
+          <button id="loadBtn" type="button">Show</button>
+        </div>
+        <p class="muted" style="margin-bottom:0">Older rows that have a status but no date only appear under “All time”.</p>
+        <div id="dashMsg" class="msg"></div>
+      </div>
+
+      <div class="cards">
+        <div class="stat"><div class="v" id="sCalls">–</div><div class="l" id="sCallsL">Calls in range</div></div>
+        <div class="stat"><div class="v" id="sToday">–</div><div class="l">Calls today</div></div>
+        <div class="stat"><div class="v" id="sPending">–</div><div class="l">Numbers still pending</div></div>
+        <div class="stat"><div class="v" id="sCallers">–</div><div class="l">Callers in range</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Calls by caller</h2>
+        <div class="bars" id="bars"><span class="muted">Choose a date range.</span></div>
+      </div>
+
+      <div class="card">
+        <h2>Status breakdown</h2>
+        <div class="scroll"><table id="table"></table></div>
+      </div>
+    </div>
+
+    <!-- ===== upload ===== -->
+    <div id="uploadView" class="hidden">
+      <div class="card">
+        <h2>Add numbers from a CSV or Excel file</h2>
+        <p class="muted">
+          The first row must be headers. Required columns: <b>City</b> and <b>Number</b>.
+          Optional: Purpose, Group Added, Caller Name, Calling Status, Date, Last Update History.
+          Rows without a city or number are skipped. Duplicates are <b>not</b> removed,
+          so don’t upload the same file twice.
+        </p>
+        <div class="row">
+          <input type="file" id="file" accept=".csv,.xlsx,.xls">
+        </div>
+        <div id="preview" class="hidden" style="margin-top:14px"></div>
+        <div id="uploadControls" class="hidden" style="margin-top:14px">
+          <div class="row">
+            <button id="uploadBtn" type="button">Upload</button>
+            <label class="muted">Start at data row
+              <input type="number" id="startRow" value="1" min="1" style="width:90px">
+            </label>
+          </div>
+        </div>
+        <div class="progress" id="progress"><div id="progressBar"></div></div>
+        <div id="uploadMsg" class="msg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="config.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  const API = String(window.APP_CONFIG.API_URL || '').replace(/\/+$/, '');
+  const $ = id => document.getElementById(id);
+  const UPLOAD_CHUNK = 500;
+
+  /* ---------- helpers ---------- */
+
+  let password = '';
+  try { password = sessionStorage.getItem('wc_admin_pw') || ''; } catch (e) {}
+
+  function setMsg(node, text, kind) {
+    node.textContent = text || '';
+    node.className = 'msg' + (text ? ' ' + (kind || 'ok') : '');
+  }
+
+  async function api(path, body) {
+    let res;
+    try {
+      res = await fetch(API + path, {
+        method: body ? 'POST' : 'GET',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Password': password },
+        body: body ? JSON.stringify(body) : undefined
+      });
+    } catch (e) {
+      throw new Error('Could not reach the server.');
+    }
+    let data = {};
+    try { data = await res.json(); } catch (e) {}
+    if (res.status === 401) { logout(); throw new Error(data.error || 'Wrong admin password.'); }
+    if (!res.ok) throw new Error(data.error || 'Request failed (' + res.status + ').');
+    return data;
+  }
+
+  const n = v => Number(v).toLocaleString();
+  const ymd = d => d.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+
+  /* ---------- login ---------- */
+
+  async function login() {
+    password = $('pw').value;
+    setMsg($('loginMsg'), '');
+    if (!password) return;
+    $('loginBtn').disabled = true;
+    try {
+      await api('/api/admin/ping');
+      try { sessionStorage.setItem('wc_admin_pw', password); } catch (e) {}
+      enter();
+    } catch (e) {
+      setMsg($('loginMsg'), e.message, 'err');
+    } finally {
+      $('loginBtn').disabled = false;
+    }
+  }
+
+  function enter() {
+    $('loginView').classList.add('hidden');
+    $('appView').classList.remove('hidden');
+    pickRange('today');
+  }
+
+  function logout() {
+    password = '';
+    try { sessionStorage.removeItem('wc_admin_pw'); } catch (e) {}
+    $('appView').classList.add('hidden');
+    $('loginView').classList.remove('hidden');
+    $('pw').value = '';
+  }
+
+  $('loginBtn').addEventListener('click', login);
+  $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+  $('logoutBtn').addEventListener('click', logout);
+
+  /* ---------- tabs ---------- */
+
+  function tab(which) {
+    $('dashView').classList.toggle('hidden', which !== 'dash');
+    $('uploadView').classList.toggle('hidden', which !== 'upload');
+    $('tabDash').classList.toggle('active', which === 'dash');
+    $('tabUpload').classList.toggle('active', which === 'upload');
+  }
+  $('tabDash').addEventListener('click', () => tab('dash'));
+  $('tabUpload').addEventListener('click', () => tab('upload'));
+
+  /* ---------- dashboard ---------- */
+
+  function pickRange(kind) {
+    const now = new Date();
+    let from = '', to = '';
+    if (kind === 'today') { from = to = ymd(now); }
+    else if (kind === 'yesterday') { const d = new Date(now); d.setDate(d.getDate() - 1); from = to = ymd(d); }
+    else if (kind === '7') { const d = new Date(now); d.setDate(d.getDate() - 6); from = ymd(d); to = ymd(now); }
+    else if (kind === 'month') { from = ymd(new Date(now.getFullYear(), now.getMonth(), 1)); to = ymd(now); }
+    $('from').value = from;
+    $('to').value = to;
+    document.querySelectorAll('[data-range]').forEach(b => b.classList.toggle('active', b.dataset.range === kind));
+    loadStats();
+  }
+
+  document.querySelectorAll('[data-range]').forEach(b =>
+    b.addEventListener('click', () => pickRange(b.dataset.range)));
+  $('loadBtn').addEventListener('click', () => {
+    document.querySelectorAll('[data-range]').forEach(b => b.classList.remove('active'));
+    loadStats();
+  });
+
+  async function loadStats() {
+    setMsg($('dashMsg'), '');
+    const from = $('from').value, to = $('to').value;
+    const q = new URLSearchParams();
+    if (from) q.set('from', from);
+    if (to) q.set('to', to);
+
+    $('loadBtn').disabled = true;
+    try {
+      render(await api('/api/admin/stats' + (q.toString() ? '?' + q : '')));
+    } catch (e) {
+      setMsg($('dashMsg'), e.message, 'err');
+    } finally {
+      $('loadBtn').disabled = false;
+    }
+  }
+
+  function render(d) {
+    $('sCalls').textContent = n(d.totalCalls);
+    $('sCallsL').textContent = d.from || d.to ? 'Calls in range' : 'Calls (all time)';
+    $('sToday').textContent = n(d.callsToday);
+    $('sPending').textContent = n(d.pending);
+    $('sCallers').textContent = n(d.callers.length);
+
+    // bars
+    const bars = $('bars');
+    bars.innerHTML = '';
+    if (d.callers.length === 0) {
+      bars.innerHTML = '<span class="muted">No calls in this range.</span>';
+    } else {
+      const max = d.callers[0].total;
+      d.callers.forEach(c => {
+        const row = document.createElement('div');
+        row.className = 'bar-row';
+        row.innerHTML = '<div class="name"></div><div class="track"><div class="fill"></div></div><div class="n"></div>';
+        row.querySelector('.name').textContent = c.caller;
+        row.querySelector('.fill').style.width = Math.max(1, (c.total / max) * 100) + '%';
+        row.querySelector('.n').textContent = n(c.total);
+        bars.appendChild(row);
+      });
+    }
+
+    // table
+    const t = $('table');
+    t.innerHTML = '';
+    if (d.callers.length === 0) return;
+
+    const head = document.createElement('tr');
+    ['Caller', 'Total', ...d.statuses].forEach(h => {
+      const th = document.createElement('th');
+      th.textContent = h;
+      head.appendChild(th);
+    });
+    t.appendChild(head);
+
+    d.callers.forEach(c => {
+      const tr = document.createElement('tr');
+      [c.caller, n(c.total), ...d.statuses.map(s => c.byStatus[s] ? n(c.byStatus[s]) : '–')].forEach(v => {
+        const td = document.createElement('td');
+        td.textContent = v;
+        tr.appendChild(td);
+      });
+      t.appendChild(tr);
+    });
+
+    const tot = document.createElement('tr');
+    tot.className = 'total';
+    ['All callers', n(d.totalCalls), ...d.statuses.map(s => n(d.statusTotals[s] || 0))].forEach(v => {
+      const td = document.createElement('td');
+      td.textContent = v;
+      tot.appendChild(td);
+    });
+    t.appendChild(tot);
+  }
+
+  /* ---------- upload ---------- */
+
+  const HEADER_NAMES = {
+    call_date:   ['date', 'calldate'],
+    caller_name: ['callername', 'caller'],
+    city:        ['city'],
+    number:      ['number', 'mobile', 'mobilenumber', 'phone', 'phonenumber', 'contact', 'contactnumber'],
+    status:      ['callingstatus', 'status'],
+    group_added: ['groupadded', 'group'],
+    purpose:     ['purpose'],
+    last_update: ['lastupdatehistory', 'lastupdate']
+  };
+
+  let parsedRows = [];   // [{city, number, ...}]
+
+  function parseCsv(text) {
+    if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+    const records = [];
+    let row = [], field = '', inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (inQuotes) {
+        if (ch === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
+        else field += ch;
+      } else if (ch === '"') inQuotes = true;
+      else if (ch === ',') { row.push(field); field = ''; }
+      else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && text[i + 1] === '\n') i++;
+        row.push(field); field = ''; records.push(row); row = [];
+      } else field += ch;
+    }
+    if (field !== '' || row.length) { row.push(field); records.push(row); }
+    return records;
+  }
+
+  async function readFile(file) {
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.csv')) {
+      return parseCsv(await file.text());
+    }
+    if (typeof XLSX === 'undefined') {
+      throw new Error('The Excel reader could not be loaded. Save the file as CSV and try again.');
+    }
+    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    // raw:false = text as shown in Excel; dates come out as yyyy-mm-dd
+    return XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy-mm-dd', defval: '' });
+  }
+
+  $('file').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    parsedRows = [];
+    $('preview').classList.add('hidden');
+    $('uploadControls').classList.add('hidden');
+    setMsg($('uploadMsg'), '');
+    $('progress').style.display = 'none';
+    if (!file) return;
+
+    try {
+      const records = await readFile(file);
+      if (records.length < 2) throw new Error('The file has no data rows.');
+
+      const norm = records[0].map(h => String(h).toLowerCase().replace(/[^a-z0-9]/g, ''));
+      const idx = {};
+      Object.entries(HEADER_NAMES).forEach(([k, names]) => { idx[k] = norm.findIndex(h => names.includes(h)); });
+
+      if (idx.city < 0 || idx.number < 0) {
+        throw new Error('Could not find “City” and “Number” columns. Headers seen: ' +
+          records[0].map(String).join(' | '));
+      }
+
+      let skipped = 0;
+      records.slice(1).forEach(rec => {
+        if (rec.every(f => String(f).trim() === '')) return;           // empty line
+        const o = {};
+        Object.keys(idx).forEach(k => { o[k] = idx[k] >= 0 ? String(rec[idx[k]] ?? '').trim() : ''; });
+        if (!o.city || !o.number) { skipped++; return; }
+        parsedRows.push(o);
+      });
+
+      showPreview(file.name, idx, records[0], skipped);
+    } catch (err) {
+      setMsg($('uploadMsg'), err.message, 'err');
+    }
+  });
+
+  function showPreview(fileName, idx, headers, skipped) {
+    const box = $('preview');
+    box.classList.remove('hidden');
+    box.innerHTML = '';
+
+    const info = document.createElement('div');
+    info.innerHTML = '<b></b> — <span></span>';
+    info.querySelector('b').textContent = fileName;
+    info.querySelector('span').textContent =
+      n(parsedRows.length) + ' rows ready' + (skipped ? ', ' + n(skipped) + ' skipped (no city or number)' : '');
+    box.appendChild(info);
+
+    const cols = Object.keys(idx).filter(k => idx[k] >= 0);
+    const wrap = document.createElement('div');
+    wrap.className = 'scroll preview';
+    const tbl = document.createElement('table');
+    const hr = document.createElement('tr');
+    cols.forEach(k => { const th = document.createElement('th'); th.textContent = headers[idx[k]]; hr.appendChild(th); });
+    tbl.appendChild(hr);
+    parsedRows.slice(0, 5).forEach(r => {
+      const tr = document.createElement('tr');
+      cols.forEach(k => { const td = document.createElement('td'); td.textContent = r[k]; tr.appendChild(td); });
+      tbl.appendChild(tr);
+    });
+    wrap.appendChild(tbl);
+    box.appendChild(wrap);
+
+    if (parsedRows.length) $('uploadControls').classList.remove('hidden');
+    $('startRow').value = 1;
+    $('startRow').max = parsedRows.length;
+  }
+
+  $('uploadBtn').addEventListener('click', async () => {
+    const start = Math.max(1, Math.min(parsedRows.length, parseInt($('startRow').value, 10) || 1)) - 1;
+    const rows = parsedRows.slice(start);
+    if (!rows.length) return;
+
+    $('uploadBtn').disabled = true;
+    $('file').disabled = true;
+    setMsg($('uploadMsg'), '');
+    $('progress').style.display = 'block';
+    $('progressBar').style.width = '0';
+
+    let inserted = 0, skipped = 0;
+    try {
+      for (let i = 0; i < rows.length; i += UPLOAD_CHUNK) {
+        const part = rows.slice(i, i + UPLOAD_CHUNK);
+        const res = await api('/api/admin/upload', { rows: part });
+        inserted += res.inserted;
+        skipped += res.skipped;
+        $('progressBar').style.width = Math.round(((i + part.length) / rows.length) * 100) + '%';
+      }
+      setMsg($('uploadMsg'), 'Done. ' + n(inserted) + ' rows added' +
+        (skipped ? ', ' + n(skipped) + ' skipped.' : '.') + ' The new numbers are available to callers now.', 'ok');
+      $('file').value = '';
+      parsedRows = [];
+      $('preview').classList.add('hidden');
+      $('uploadControls').classList.add('hidden');
+    } catch (err) {
+      const done = start + inserted + skipped;
+      setMsg($('uploadMsg'),
+        err.message + ' — ' + n(inserted) + ' rows were added before the error. ' +
+        'To continue without duplicates, set “Start at data row” to ' + n(done + 1) + ' and upload again.',
+        'err');
+      $('startRow').value = done + 1;
+    } finally {
+      $('uploadBtn').disabled = false;
+      $('file').disabled = false;
+    }
+  });
+
+  /* ---------- start ---------- */
+
+  if (password) {
+    api('/api/admin/ping').then(enter).catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>
