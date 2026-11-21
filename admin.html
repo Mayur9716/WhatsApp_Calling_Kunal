@@ -7,8 +7,9 @@
 <style>
   :root {
     --bg: #f4f5f7; --card: #fff; --text: #1a1a1a; --muted: #6b7280; --line: #eceef1;
-    --purple: #6f3dbf; --blue: #1e88ff; --green: #04943a;
+    --purple: #6f3dbf; --blue: #1e88ff; --green: #04943a; --red: #c62828;
     --ok-bg: #e6f6ec; --ok-text: #14602f; --err-bg: #fff1c9; --err-text: #7a4b00;
+    --info-bg: #eaf2ff; --info-text: #1d4a8a;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
@@ -19,16 +20,22 @@
   h1 { font-size: 22px; margin: 0 0 4px; }
   h2 { font-size: 17px; margin: 0 0 12px; }
   p.muted, .muted { color: var(--muted); font-size: 13px; }
-  input[type=password], input[type=date], input[type=number], input[type=file] {
+  a { color: var(--purple); }
+  input[type=text], input[type=password], input[type=date], input[type=number], input[type=file] {
     padding: 10px; font-size: 15px; border: 1px solid #d5d8dd; border-radius: 6px; background: #fff; max-width: 100%; }
+  .stack label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  .stack input { width: 100%; }
   button { padding: 10px 16px; border: 0; border-radius: 6px; font-size: 15px; color: #fff;
     background: var(--purple); cursor: pointer; }
   button.secondary { background: #e7e9ee; color: var(--text); }
+  button.danger { background: var(--red); }
+  button.small { padding: 6px 10px; font-size: 13px; }
   button.chip { background: #e7e9ee; color: var(--text); padding: 7px 12px; font-size: 13px; }
   button.chip.active { background: var(--purple); color: #fff; }
   button:disabled { opacity: .55; cursor: default; }
   .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .tabs { display: flex; gap: 8px; margin: 12px 0 16px; }
+  .space { justify-content: space-between; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 16px; }
   .tabs button { background: #e7e9ee; color: var(--text); }
   .tabs button.active { background: var(--purple); color: #fff; }
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
@@ -36,11 +43,15 @@
   .stat .v { font-size: 26px; font-weight: 700; }
   .stat .l { font-size: 13px; color: var(--muted); margin-top: 2px; }
   .scroll { overflow-x: auto; }
+  .tall { max-height: 460px; overflow: auto; }
   table { border-collapse: collapse; width: 100%; font-size: 14px; }
   th, td { padding: 9px 10px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
   th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: #fff; }
-  th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; position: sticky; top: 0; background: #fff; z-index: 1; }
+  th:first-child { z-index: 2; }
   tr.total td { font-weight: 700; border-top: 2px solid var(--line); }
+  table.left th, table.left td { text-align: left; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; background: #eee9f8; color: var(--purple); }
   .bars .bar-row { display: flex; align-items: center; gap: 10px; margin: 7px 0; font-size: 14px; }
   .bars .name { width: 130px; flex: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .bars .track { flex: 1; background: #eee9f8; border-radius: 4px; height: 18px; }
@@ -49,33 +60,59 @@
   .msg { margin-top: 12px; padding: 12px; border-radius: 6px; font-size: 14px; display: none; }
   .msg.ok { display: block; background: var(--ok-bg); color: var(--ok-text); }
   .msg.err { display: block; background: var(--err-bg); color: var(--err-text); }
+  .msg.info { display: block; background: var(--info-bg); color: var(--info-text); }
   .progress { height: 14px; background: #e7e9ee; border-radius: 7px; overflow: hidden; margin-top: 12px; display: none; }
   .progress div { height: 100%; width: 0; background: var(--green); transition: width .2s; }
   .hidden { display: none !important; }
   .preview td, .preview th { text-align: left; font-size: 13px; }
   .preview th:first-child, .preview td:first-child { position: static; }
+  .sample { display: inline-block; margin: 4px 0 12px; padding: 9px 14px; border-radius: 6px;
+    background: #f6f3fc; text-decoration: none; font-weight: 600; font-size: 14px; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <!-- ===== login ===== -->
-  <div id="loginView" class="card" style="max-width:420px;margin:60px auto">
+  <!-- ===================== login / first-time setup ===================== -->
+  <div id="loginView" class="card" style="max-width:440px;margin:50px auto">
     <h1>Calling Admin</h1>
-    <p class="muted">Enter the admin password.</p>
-    <div class="row">
-      <input type="password" id="pw" placeholder="Admin password" style="flex:1" autocomplete="current-password">
-      <button id="loginBtn" type="button">Open</button>
-    </div>
+
+    <div id="loginLoading" class="muted">Checking…</div>
+
+    <form id="loginForm" class="stack hidden" autocomplete="on">
+      <p class="muted">Log in with your admin username and password.</p>
+      <label for="loginUser">Username</label>
+      <input type="text" id="loginUser" autocomplete="username" autocapitalize="none" spellcheck="false">
+      <label for="loginPass">Password</label>
+      <input type="password" id="loginPass" autocomplete="current-password">
+      <div style="margin-top:14px"><button type="submit" id="loginBtn">Log in</button></div>
+    </form>
+
+    <form id="setupForm" class="stack hidden" autocomplete="off">
+      <p class="muted">
+        <b>First-time setup.</b> Create the first admin account (the owner).
+        The <b>setup key</b> is the <code>ADMIN_PASSWORD</code> saved in your Cloudflare Worker settings.
+      </p>
+      <label for="setupKey">Setup key</label>
+      <input type="password" id="setupKey" autocomplete="off">
+      <label for="setupUser">Choose a username</label>
+      <input type="text" id="setupUser" autocapitalize="none" spellcheck="false" autocomplete="off">
+      <label for="setupPass">Choose a password (at least 8 characters)</label>
+      <input type="password" id="setupPass" autocomplete="new-password">
+      <label for="setupPass2">Repeat the password</label>
+      <input type="password" id="setupPass2" autocomplete="new-password">
+      <div style="margin-top:14px"><button type="submit" id="setupBtn">Create admin account</button></div>
+    </form>
+
     <div id="loginMsg" class="msg"></div>
   </div>
 
-  <!-- ===== app ===== -->
+  <!-- ===================== app ===================== -->
   <div id="appView" class="hidden">
-    <div class="row" style="justify-content:space-between">
+    <div class="row space">
       <div>
         <h1>Calling Admin</h1>
-        <div class="muted">Dashboard and data upload</div>
+        <div class="muted">Signed in as <b id="who"></b> <span class="badge" id="roleBadge"></span></div>
       </div>
       <button class="secondary" id="logoutBtn" type="button">Log out</button>
     </div>
@@ -83,6 +120,7 @@
     <div class="tabs">
       <button id="tabDash" class="active" type="button">Dashboard</button>
       <button id="tabUpload" type="button">Upload data</button>
+      <button id="tabAdmins" type="button">Admins</button>
     </div>
 
     <!-- ===== dashboard ===== -->
@@ -93,6 +131,8 @@
           <button class="chip" data-range="today" type="button">Today</button>
           <button class="chip" data-range="yesterday" type="button">Yesterday</button>
           <button class="chip" data-range="7" type="button">Last 7 days</button>
+          <button class="chip" data-range="30" type="button">Last 30 days</button>
+          <button class="chip" data-range="90" type="button">Last 90 days</button>
           <button class="chip" data-range="month" type="button">This month</button>
           <button class="chip" data-range="all" type="button">All time</button>
         </div>
@@ -101,8 +141,8 @@
           <label>To <input type="date" id="to"></label>
           <button id="loadBtn" type="button">Show</button>
         </div>
-        <p class="muted" style="margin-bottom:0">Older rows that have a status but no date only appear under “All time”.</p>
         <div id="dashMsg" class="msg"></div>
+        <div id="undatedBanner" class="msg"></div>
       </div>
 
       <div class="cards">
@@ -114,12 +154,17 @@
 
       <div class="card">
         <h2>Calls by caller</h2>
-        <div class="bars" id="bars"><span class="muted">Choose a date range.</span></div>
+        <div class="bars" id="bars"><span class="muted">Loading…</span></div>
       </div>
 
       <div class="card">
-        <h2>Status breakdown</h2>
+        <h2>Status breakdown by caller</h2>
         <div class="scroll"><table id="table"></table></div>
+      </div>
+
+      <div class="card">
+        <h2>Calls by day</h2>
+        <div class="scroll tall"><table id="dayTable"></table></div>
       </div>
     </div>
 
@@ -127,11 +172,13 @@
     <div id="uploadView" class="hidden">
       <div class="card">
         <h2>Add numbers from a CSV or Excel file</h2>
+        <a class="sample" href="sample-upload.xlsx" download>⬇ Download sample Excel file</a>
+        <a class="sample" href="sample-upload.csv" download>⬇ Sample CSV</a>
         <p class="muted">
           The first row must be headers. Required columns: <b>City</b> and <b>Number</b>.
           Optional: Purpose, Group Added, Caller Name, Calling Status, Date, Last Update History.
           Rows without a city or number are skipped. Duplicates are <b>not</b> removed,
-          so don’t upload the same file twice.
+          so don’t upload the same file twice. The sample file has an Instructions sheet.
         </p>
         <div class="row">
           <input type="file" id="file" accept=".csv,.xlsx,.xls">
@@ -149,6 +196,42 @@
         <div id="uploadMsg" class="msg"></div>
       </div>
     </div>
+
+    <!-- ===== admins ===== -->
+    <div id="adminsView" class="hidden">
+      <div class="card">
+        <h2>Admins</h2>
+        <div class="scroll"><table id="adminTable" class="left"></table></div>
+        <div id="adminsMsg" class="msg"></div>
+      </div>
+
+      <div class="card">
+        <h2>Add an admin</h2>
+        <form id="addForm" class="stack" autocomplete="off" style="max-width:380px">
+          <label for="newUser">Username (3–30 letters, numbers, . - _)</label>
+          <input type="text" id="newUser" autocapitalize="none" spellcheck="false" autocomplete="off">
+          <label for="newPass">Temporary password (at least 8 characters)</label>
+          <input type="password" id="newPass" autocomplete="new-password">
+          <div style="margin-top:14px"><button type="submit" id="addBtn">Add admin</button></div>
+        </form>
+        <p class="muted">Give them the username and password. They can change the password from this tab after logging in.</p>
+        <div id="addMsg" class="msg"></div>
+      </div>
+
+      <div class="card">
+        <h2>Change my password</h2>
+        <form id="pwForm" class="stack" autocomplete="off" style="max-width:380px">
+          <label for="curPass">Current password</label>
+          <input type="password" id="curPass" autocomplete="current-password">
+          <label for="newPass1">New password (at least 8 characters)</label>
+          <input type="password" id="newPass1" autocomplete="new-password">
+          <label for="newPass2">Repeat the new password</label>
+          <input type="password" id="newPass2" autocomplete="new-password">
+          <div style="margin-top:14px"><button type="submit" id="pwBtn">Change password</button></div>
+        </form>
+        <div id="pwMsg" class="msg"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -162,93 +245,221 @@
   const $ = id => document.getElementById(id);
   const UPLOAD_CHUNK = 500;
 
-  /* ---------- helpers ---------- */
+  /* =====================================================
+     helpers
+     ===================================================== */
 
-  let password = '';
-  try { password = sessionStorage.getItem('wc_admin_pw') || ''; } catch (e) {}
+  const n = v => Number(v).toLocaleString();
+  const ymd = d => d.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+
+  function fmtDate(iso) {
+    if (!iso) return 'No date';
+    const d = new Date(iso + 'T00:00:00');
+    return isNaN(d) ? iso : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
 
   function setMsg(node, text, kind) {
     node.textContent = text || '';
     node.className = 'msg' + (text ? ' ' + (kind || 'ok') : '');
   }
 
-  async function api(path, body) {
+  // Runs fn while the button shows a "working" label (PBKDF2 can take a moment on phones).
+  async function working(btn, label, fn) {
+    const old = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = label;
+    try { return await fn(); }
+    finally { btn.disabled = false; btn.textContent = old; }
+  }
+
+  /* =====================================================
+     password -> key (the real password never leaves this device)
+     ===================================================== */
+
+  const KEY_SALT = 'whatsapp-calling-admin|';
+  const KEY_ROUNDS = 600000;
+
+  async function deriveKey(username, password) {
+    if (!(window.crypto && crypto.subtle)) {
+      throw new Error('This browser cannot do secure logins. Open the page over https in a current browser.');
+    }
+    const enc = new TextEncoder();
+    const base = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode(KEY_SALT + username.trim().toLowerCase()), iterations: KEY_ROUNDS },
+      base,
+      256
+    );
+    return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  function checkNewPassword(p1, p2) {
+    if (p1.length < 8) return 'The password must be at least 8 characters.';
+    if (p1 !== p2) return 'The two passwords do not match.';
+    return '';
+  }
+  const USERNAME_RE = /^[A-Za-z0-9._-]{3,30}$/;
+
+  /* =====================================================
+     session + API
+     ===================================================== */
+
+  let session = { token: '', username: '', isOwner: false };
+  try {
+    const saved = JSON.parse(sessionStorage.getItem('wc_admin_session') || 'null');
+    if (saved && saved.token) session = saved;
+  } catch (e) {}
+
+  function saveSession(s) {
+    session = { token: s.token, username: s.username, isOwner: !!s.isOwner };
+    try { sessionStorage.setItem('wc_admin_session', JSON.stringify(session)); } catch (e) {}
+  }
+
+  async function api(path, body, opts) {
+    opts = opts || {};
+    const headers = { 'Content-Type': 'application/json' };
+    if (!opts.noAuth && session.token) headers.Authorization = 'Bearer ' + session.token;
+
     let res;
     try {
       res = await fetch(API + path, {
         method: body ? 'POST' : 'GET',
-        headers: { 'Content-Type': 'application/json', 'X-Admin-Password': password },
+        headers,
         body: body ? JSON.stringify(body) : undefined
       });
     } catch (e) {
       throw new Error('Could not reach the server.');
     }
+
     let data = {};
     try { data = await res.json(); } catch (e) {}
-    if (res.status === 401) { logout(); throw new Error(data.error || 'Wrong admin password.'); }
+
+    if (res.status === 401 && !opts.noAuth) {
+      endSession('Your session has ended. Please log in again.');
+      throw new Error(data.error || 'Your session has ended.');
+    }
     if (!res.ok) throw new Error(data.error || 'Request failed (' + res.status + ').');
     return data;
   }
 
-  const n = v => Number(v).toLocaleString();
-  const ymd = d => d.toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+  function endSession(message) {
+    session = { token: '', username: '', isOwner: false };
+    try { sessionStorage.removeItem('wc_admin_session'); } catch (e) {}
+    $('appView').classList.add('hidden');
+    $('loginView').classList.remove('hidden');
+    showLoginOrSetup(message);
+  }
 
-  /* ---------- login ---------- */
+  /* =====================================================
+     login / setup
+     ===================================================== */
 
-  async function login() {
-    password = $('pw').value;
-    setMsg($('loginMsg'), '');
-    if (!password) return;
-    $('loginBtn').disabled = true;
+  async function showLoginOrSetup(message) {
+    $('loginView').classList.remove('hidden');
+    $('loginLoading').classList.remove('hidden');
+    $('loginForm').classList.add('hidden');
+    $('setupForm').classList.add('hidden');
+    setMsg($('loginMsg'), message || '', message ? 'info' : '');
+
     try {
-      await api('/api/admin/ping');
-      try { sessionStorage.setItem('wc_admin_pw', password); } catch (e) {}
-      enter();
+      const st = await api('/api/admin/status', null, { noAuth: true });
+      $('loginLoading').classList.add('hidden');
+      $(st.needsSetup ? 'setupForm' : 'loginForm').classList.remove('hidden');
     } catch (e) {
-      setMsg($('loginMsg'), e.message, 'err');
-    } finally {
-      $('loginBtn').disabled = false;
+      $('loginLoading').classList.add('hidden');
+      setMsg($('loginMsg'), e.message + ' Reload the page to try again.', 'err');
     }
   }
 
-  function enter() {
+  $('loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    setMsg($('loginMsg'), '');
+    const username = $('loginUser').value.trim();
+    const password = $('loginPass').value;
+    if (!username || !password) return setMsg($('loginMsg'), 'Enter your username and password.', 'err');
+
+    await working($('loginBtn'), 'Checking…', async () => {
+      try {
+        const key = await deriveKey(username, password);
+        const res = await api('/api/admin/login', { username, key }, { noAuth: true });
+        saveSession(res);
+        $('loginPass').value = '';
+        enterApp();
+      } catch (err) {
+        setMsg($('loginMsg'), err.message, 'err');
+      }
+    });
+  });
+
+  $('setupForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    setMsg($('loginMsg'), '');
+    const setupKey = $('setupKey').value;
+    const username = $('setupUser').value.trim();
+    const p1 = $('setupPass').value, p2 = $('setupPass2').value;
+
+    if (!setupKey) return setMsg($('loginMsg'), 'Enter the setup key.', 'err');
+    if (!USERNAME_RE.test(username)) return setMsg($('loginMsg'), 'Username must be 3–30 characters: letters, numbers, dot, dash or underscore.', 'err');
+    const bad = checkNewPassword(p1, p2);
+    if (bad) return setMsg($('loginMsg'), bad, 'err');
+
+    await working($('setupBtn'), 'Creating…', async () => {
+      try {
+        const key = await deriveKey(username, p1);
+        const res = await api('/api/admin/setup', { setupKey, username, key }, { noAuth: true });
+        saveSession(res);
+        ['setupKey', 'setupPass', 'setupPass2'].forEach(id => ($(id).value = ''));
+        enterApp();
+      } catch (err) {
+        setMsg($('loginMsg'), err.message, 'err');
+      }
+    });
+  });
+
+  $('logoutBtn').addEventListener('click', () => endSession(''));
+
+  function enterApp() {
     $('loginView').classList.add('hidden');
     $('appView').classList.remove('hidden');
-    pickRange('today');
+    $('who').textContent = session.username;
+    $('roleBadge').textContent = session.isOwner ? 'Owner' : 'Admin';
+    tab('dash');
+    pickRange('all');
   }
 
-  function logout() {
-    password = '';
-    try { sessionStorage.removeItem('wc_admin_pw'); } catch (e) {}
-    $('appView').classList.add('hidden');
-    $('loginView').classList.remove('hidden');
-    $('pw').value = '';
-  }
-
-  $('loginBtn').addEventListener('click', login);
-  $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
-  $('logoutBtn').addEventListener('click', logout);
-
-  /* ---------- tabs ---------- */
+  /* =====================================================
+     tabs
+     ===================================================== */
 
   function tab(which) {
     $('dashView').classList.toggle('hidden', which !== 'dash');
     $('uploadView').classList.toggle('hidden', which !== 'upload');
+    $('adminsView').classList.toggle('hidden', which !== 'admins');
     $('tabDash').classList.toggle('active', which === 'dash');
     $('tabUpload').classList.toggle('active', which === 'upload');
+    $('tabAdmins').classList.toggle('active', which === 'admins');
+    if (which === 'admins') loadAdmins();
   }
   $('tabDash').addEventListener('click', () => tab('dash'));
   $('tabUpload').addEventListener('click', () => tab('upload'));
+  $('tabAdmins').addEventListener('click', () => tab('admins'));
 
-  /* ---------- dashboard ---------- */
+  /* =====================================================
+     dashboard
+     ===================================================== */
 
   function pickRange(kind) {
     const now = new Date();
     let from = '', to = '';
+    const back = days => { const d = new Date(now); d.setDate(d.getDate() - days); return d; };
+
     if (kind === 'today') { from = to = ymd(now); }
-    else if (kind === 'yesterday') { const d = new Date(now); d.setDate(d.getDate() - 1); from = to = ymd(d); }
-    else if (kind === '7') { const d = new Date(now); d.setDate(d.getDate() - 6); from = ymd(d); to = ymd(now); }
+    else if (kind === 'yesterday') { from = to = ymd(back(1)); }
+    else if (kind === '7') { from = ymd(back(6)); to = ymd(now); }
+    else if (kind === '30') { from = ymd(back(29)); to = ymd(now); }
+    else if (kind === '90') { from = ymd(back(89)); to = ymd(now); }
     else if (kind === 'month') { from = ymd(new Date(now.getFullYear(), now.getMonth(), 1)); to = ymd(now); }
+
     $('from').value = from;
     $('to').value = to;
     document.querySelectorAll('[data-range]').forEach(b => b.classList.toggle('active', b.dataset.range === kind));
@@ -257,6 +468,7 @@
 
   document.querySelectorAll('[data-range]').forEach(b =>
     b.addEventListener('click', () => pickRange(b.dataset.range)));
+
   $('loadBtn').addEventListener('click', () => {
     document.querySelectorAll('[data-range]').forEach(b => b.classList.remove('active'));
     loadStats();
@@ -279,12 +491,41 @@
     }
   }
 
+  function addRow(table, cells, className) {
+    const tr = document.createElement('tr');
+    if (className) tr.className = className;
+    cells.forEach(v => {
+      const td = document.createElement('td');
+      td.textContent = v;
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  }
+
+  function addHead(table, labels) {
+    const tr = document.createElement('tr');
+    labels.forEach(h => {
+      const th = document.createElement('th');
+      th.textContent = h;
+      tr.appendChild(th);
+    });
+    table.appendChild(tr);
+  }
+
   function render(d) {
     $('sCalls').textContent = n(d.totalCalls);
     $('sCallsL').textContent = d.from || d.to ? 'Calls in range' : 'Calls (all time)';
     $('sToday').textContent = n(d.callsToday);
     $('sPending').textContent = n(d.pending);
     $('sCallers').textContent = n(d.callers.length);
+
+    setMsg(
+      $('undatedBanner'),
+      d.undated > 0
+        ? n(d.undated) + ' completed calls have no date. They only appear under “All time” (listed as “No date”).'
+        : '',
+      'info'
+    );
 
     // bars
     const bars = $('bars');
@@ -304,40 +545,31 @@
       });
     }
 
-    // table
+    // status breakdown by caller
     const t = $('table');
     t.innerHTML = '';
-    if (d.callers.length === 0) return;
+    if (d.callers.length) {
+      addHead(t, ['Caller', 'Total', ...d.statuses]);
+      d.callers.forEach(c =>
+        addRow(t, [c.caller, n(c.total), ...d.statuses.map(s => (c.byStatus[s] ? n(c.byStatus[s]) : '–'))]));
+      addRow(t, ['All callers', n(d.totalCalls), ...d.statuses.map(s => n(d.statusTotals[s] || 0))], 'total');
+    }
 
-    const head = document.createElement('tr');
-    ['Caller', 'Total', ...d.statuses].forEach(h => {
-      const th = document.createElement('th');
-      th.textContent = h;
-      head.appendChild(th);
-    });
-    t.appendChild(head);
-
-    d.callers.forEach(c => {
-      const tr = document.createElement('tr');
-      [c.caller, n(c.total), ...d.statuses.map(s => c.byStatus[s] ? n(c.byStatus[s]) : '–')].forEach(v => {
-        const td = document.createElement('td');
-        td.textContent = v;
-        tr.appendChild(td);
-      });
-      t.appendChild(tr);
-    });
-
-    const tot = document.createElement('tr');
-    tot.className = 'total';
-    ['All callers', n(d.totalCalls), ...d.statuses.map(s => n(d.statusTotals[s] || 0))].forEach(v => {
-      const td = document.createElement('td');
-      td.textContent = v;
-      tot.appendChild(td);
-    });
-    t.appendChild(tot);
+    // by day
+    const dt = $('dayTable');
+    dt.innerHTML = '';
+    if (d.days.length === 0) {
+      dt.innerHTML = '<tr><td class="muted">No calls in this range.</td></tr>';
+    } else {
+      addHead(dt, ['Date', 'Total', ...d.statuses]);
+      d.days.forEach(day =>
+        addRow(dt, [fmtDate(day.date), n(day.total), ...d.statuses.map(s => (day.byStatus[s] ? n(day.byStatus[s]) : '–'))]));
+    }
   }
 
-  /* ---------- upload ---------- */
+  /* =====================================================
+     upload
+     ===================================================== */
 
   const HEADER_NAMES = {
     call_date:   ['date', 'calldate'],
@@ -350,7 +582,7 @@
     last_update: ['lastupdatehistory', 'lastupdate']
   };
 
-  let parsedRows = [];   // [{city, number, ...}]
+  let parsedRows = [];
 
   function parseCsv(text) {
     if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
@@ -374,15 +606,12 @@
 
   async function readFile(file) {
     const name = file.name.toLowerCase();
-    if (name.endsWith('.csv')) {
-      return parseCsv(await file.text());
-    }
+    if (name.endsWith('.csv')) return parseCsv(await file.text());
     if (typeof XLSX === 'undefined') {
       throw new Error('The Excel reader could not be loaded. Save the file as CSV and try again.');
     }
     const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    // raw:false = text as shown in Excel; dates come out as yyyy-mm-dd
+    const ws = wb.Sheets[wb.SheetNames[0]]; // first sheet only
     return XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy-mm-dd', defval: '' });
   }
 
@@ -410,7 +639,7 @@
 
       let skipped = 0;
       records.slice(1).forEach(rec => {
-        if (rec.every(f => String(f).trim() === '')) return;           // empty line
+        if (rec.every(f => String(f).trim() === '')) return;
         const o = {};
         Object.keys(idx).forEach(k => { o[k] = idx[k] >= 0 ? String(rec[idx[k]] ?? '').trim() : ''; });
         if (!o.city || !o.number) { skipped++; return; }
@@ -439,14 +668,8 @@
     const wrap = document.createElement('div');
     wrap.className = 'scroll preview';
     const tbl = document.createElement('table');
-    const hr = document.createElement('tr');
-    cols.forEach(k => { const th = document.createElement('th'); th.textContent = headers[idx[k]]; hr.appendChild(th); });
-    tbl.appendChild(hr);
-    parsedRows.slice(0, 5).forEach(r => {
-      const tr = document.createElement('tr');
-      cols.forEach(k => { const td = document.createElement('td'); td.textContent = r[k]; tr.appendChild(td); });
-      tbl.appendChild(tr);
-    });
+    addHead(tbl, cols.map(k => headers[idx[k]]));
+    parsedRows.slice(0, 5).forEach(r => addRow(tbl, cols.map(k => r[k])));
     wrap.appendChild(tbl);
     box.appendChild(wrap);
 
@@ -494,11 +717,141 @@
     }
   });
 
-  /* ---------- start ---------- */
+  /* =====================================================
+     admins tab
+     ===================================================== */
 
-  if (password) {
-    api('/api/admin/ping').then(enter).catch(() => {});
+  async function loadAdmins() {
+    setMsg($('adminsMsg'), '');
+    try {
+      const { admins } = await api('/api/admin/admins');
+      const t = $('adminTable');
+      t.innerHTML = '';
+      addHead(t, ['Username', 'Role', 'Added by', 'Added on', '']);
+
+      admins.forEach(a => {
+        const tr = document.createElement('tr');
+        const cells = [
+          a.username + (a.username.toLowerCase() === session.username.toLowerCase() ? ' (you)' : ''),
+          a.isOwner ? 'Owner' : 'Admin',
+          a.createdBy || '—',
+          a.createdAt ? fmtDate(String(a.createdAt).slice(0, 10)) : '—'
+        ];
+        cells.forEach(v => { const td = document.createElement('td'); td.textContent = v; tr.appendChild(td); });
+
+        const actions = document.createElement('td');
+        if (session.isOwner && !a.isOwner) {
+          const reset = document.createElement('button');
+          reset.className = 'secondary small';
+          reset.textContent = 'Reset password';
+          reset.dataset.action = 'reset';
+          reset.dataset.user = a.username;
+          const remove = document.createElement('button');
+          remove.className = 'danger small';
+          remove.textContent = 'Remove';
+          remove.dataset.action = 'remove';
+          remove.dataset.user = a.username;
+          remove.style.marginLeft = '6px';
+          actions.appendChild(reset);
+          actions.appendChild(remove);
+        }
+        tr.appendChild(actions);
+        t.appendChild(tr);
+      });
+    } catch (e) {
+      setMsg($('adminsMsg'), e.message, 'err');
+    }
   }
+
+  $('adminTable').addEventListener('click', async e => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const user = btn.dataset.user;
+    setMsg($('adminsMsg'), '');
+
+    if (btn.dataset.action === 'remove') {
+      if (!window.confirm('Remove admin "' + user + '"? They will be logged out immediately.')) return;
+      try {
+        await api('/api/admin/admins/remove', { username: user });
+        setMsg($('adminsMsg'), 'Removed ' + user + '.', 'ok');
+        loadAdmins();
+      } catch (err) { setMsg($('adminsMsg'), err.message, 'err'); }
+    }
+
+    if (btn.dataset.action === 'reset') {
+      const pw = window.prompt('New temporary password for "' + user + '" (at least 8 characters):');
+      if (pw === null) return;
+      if (pw.length < 8) return setMsg($('adminsMsg'), 'The password must be at least 8 characters.', 'err');
+      await working(btn, 'Working…', async () => {
+        try {
+          const key = await deriveKey(user, pw);
+          await api('/api/admin/admins/reset', { username: user, key });
+          setMsg($('adminsMsg'), 'Password reset for ' + user + '. Give them the new password; they can change it after logging in.', 'ok');
+        } catch (err) { setMsg($('adminsMsg'), err.message, 'err'); }
+      });
+    }
+  });
+
+  $('addForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    setMsg($('addMsg'), '');
+    const username = $('newUser').value.trim();
+    const password = $('newPass').value;
+
+    if (!USERNAME_RE.test(username)) return setMsg($('addMsg'), 'Username must be 3–30 characters: letters, numbers, dot, dash or underscore.', 'err');
+    if (password.length < 8) return setMsg($('addMsg'), 'The password must be at least 8 characters.', 'err');
+
+    await working($('addBtn'), 'Adding…', async () => {
+      try {
+        const key = await deriveKey(username, password);
+        await api('/api/admin/admins', { username, key });
+        setMsg($('addMsg'), 'Added ' + username + '. Give them the username and password.', 'ok');
+        $('newUser').value = '';
+        $('newPass').value = '';
+        loadAdmins();
+      } catch (err) { setMsg($('addMsg'), err.message, 'err'); }
+    });
+  });
+
+  $('pwForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    setMsg($('pwMsg'), '');
+    const cur = $('curPass').value, p1 = $('newPass1').value, p2 = $('newPass2').value;
+
+    if (!cur) return setMsg($('pwMsg'), 'Enter your current password.', 'err');
+    const bad = checkNewPassword(p1, p2);
+    if (bad) return setMsg($('pwMsg'), bad, 'err');
+    if (p1 === cur) return setMsg($('pwMsg'), 'The new password must be different from the current one.', 'err');
+
+    await working($('pwBtn'), 'Changing…', async () => {
+      try {
+        const currentKey = await deriveKey(session.username, cur);
+        const newKey = await deriveKey(session.username, p1);
+        const res = await api('/api/admin/change-password', { currentKey, newKey });
+        saveSession(res); // old sessions stop working, this one gets a fresh token
+        ['curPass', 'newPass1', 'newPass2'].forEach(id => ($(id).value = ''));
+        setMsg($('pwMsg'), 'Password changed. Other devices where you were logged in will need to log in again.', 'ok');
+      } catch (err) { setMsg($('pwMsg'), err.message, 'err'); }
+    });
+  });
+
+  /* =====================================================
+     start
+     ===================================================== */
+
+  (async function init() {
+    if (session.token) {
+      try {
+        const me = await api('/api/admin/ping');
+        saveSession({ token: session.token, username: me.username, isOwner: me.isOwner });
+        return enterApp();
+      } catch (e) {
+        // A bad/expired session was already sent to the login screen by api().
+        if (!session.token) return;
+      }
+    }
+    showLoginOrSetup();
+  })();
 })();
 </script>
 </body>

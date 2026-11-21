@@ -99,6 +99,11 @@
 
     <button id="findBtn" type="button">Find Next Person</button>
 
+    <div class="opt">
+      <input type="checkbox" id="autoNext" checked>
+      <label for="autoNext">Load the next number automatically after submitting</label>
+    </div>
+
     <div id="person" class="person hidden">
       <div class="hint">Next person to call</div>
       <div class="number" id="number"></div>
@@ -106,14 +111,11 @@
       <div class="note" id="reserveNote"></div>
     </div>
 
-    <h2>Calling Status</h2>
-    <div class="status-list" id="statusList"></div>
-
-    <button id="submitBtn" type="button" disabled>Submit Status</button>
-
-    <div class="opt">
-      <input type="checkbox" id="autoNext" checked>
-      <label for="autoNext">Load the next number automatically after submitting</label>
+    <!-- only visible while a number is loaded -->
+    <div id="statusSection" class="hidden">
+      <h2>Calling Status</h2>
+      <div class="status-list" id="statusList"></div>
+      <button id="submitBtn" type="button" disabled>Submit Status</button>
     </div>
 
     <div id="msg" class="msg"></div>
@@ -131,7 +133,7 @@
   const el = {
     caller: $('caller'), city: $('city'), find: $('findBtn'), submit: $('submitBtn'),
     person: $('person'), number: $('number'), call: $('callBtn'), note: $('reserveNote'),
-    statusList: $('statusList'), msg: $('msg'), autoNext: $('autoNext')
+    statusList: $('statusList'), statusSection: $('statusSection'), msg: $('msg'), autoNext: $('autoNext')
   };
 
   let current = null;   // { id, city, number } reserved for this caller
@@ -268,6 +270,8 @@
       el.person.classList.add('hidden');
       el.number.textContent = '';
     }
+    // The status options only exist while there is a number to give a status to.
+    el.statusSection.classList.toggle('hidden', !p);
     el.submit.disabled = busy || !current;
   }
 
