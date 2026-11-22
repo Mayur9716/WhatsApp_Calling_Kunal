@@ -4,100 +4,108 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WhatsApp Calling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f4f5f7;
-    --card: #ffffff;
-    --text: #1a1a1a;
-    --muted: #6b7280;
-    --line: #eceef1;
-    --purple: #6f3dbf;
-    --green: #04943a;
-    --blue: #1e88ff;
-    --ok-bg: #e6f6ec;  --ok-text: #14602f;
-    --err-bg: #fff1c9; --err-text: #7a4b00;
+    --bg: #fdf3e6; --card: #fffaf4; --text: #12332d; --muted: #6f7c78; --line: #f1e4d3;
+    --orange: #ef7d12; --teal: #0a5f4f; --teal-d: #064238; --teal-l: #1b8a73;
+    --ok-bg: #e3f4ea; --ok-text: #14602f; --err-bg: #fff1c9; --err-text: #7a4b00;
   }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  }
-  .wrap { max-width: 520px; margin: 0 auto; padding: 16px; }
-  .card {
-    background: var(--card);
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
-  }
-  h1 { font-size: 22px; margin: 0 0 14px; }
-  h2 { font-size: 18px; margin: 22px 0 6px; }
-  label.field { display: block; font-weight: 700; font-size: 17px; margin: 14px 0 6px; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: #e9dfd0; color: var(--text);
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+  .app { max-width: 520px; min-height: 100vh; margin: 0 auto; background: var(--bg); position: relative; overflow: hidden;
+    box-shadow: 0 0 40px rgba(80, 50, 10, .15); }
+  .top { position: relative; background: linear-gradient(135deg, #07574a, #0a6a58); color: #fff; padding: 22px 20px 30px;
+    display: flex; align-items: center; gap: 16px; overflow: hidden; }
+  .top::after { content: ""; position: absolute; right: -110px; top: -60px; width: 220px; height: 220px;
+    background: linear-gradient(135deg, #ffb13d, #f2780c); transform: skewX(-24deg) translateX(70px); opacity: .95; }
+  .top > * { position: relative; z-index: 1; }
+  .top .wa { width: 42px; height: 42px; flex: none; }
+  .top .sep { width: 1px; align-self: stretch; background: rgba(255,255,255,.4); margin: 4px 0; }
+  .top h1 { font-size: 26px; font-weight: 800; margin: 0; letter-spacing: -.2px; line-height: 1.1; }
+  .sheet { position: relative; background: var(--bg); border-radius: 28px 28px 0 0; margin-top: -16px; padding: 22px 16px 40px; z-index: 2; }
+  .ico { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .frow { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .frow .lab { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; width: 132px; flex: none; }
+  .frow .lab .ico { width: 26px; height: 26px; }
   input[type=text], select {
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-    border: 1px solid #d5d8dd;
-    border-radius: 6px;
-    background: #fff;
-    color: var(--text);
-  }
-  select { background: #ececf0; }
-  button, a.btn {
-    display: block;
-    width: 100%;
-    padding: 13px;
-    border: 0;
-    border-radius: 6px;
-    font-size: 16px;
-    color: #fff;
-    text-align: center;
-    text-decoration: none;
-    cursor: pointer;
-  }
-  button:disabled { opacity: 0.55; cursor: default; }
-  #findBtn { background: var(--purple); margin-top: 16px; }
-  #submitBtn { background: var(--blue); margin-top: 18px; }
-  a.call { background: var(--green); font-size: 20px; font-weight: 700; padding: 15px; margin-top: 12px; }
-  .person {
-    background: #f1f3f5;
-    border-radius: 8px;
-    padding: 18px 16px 20px;
-    margin-top: 16px;
-    text-align: center;
-  }
-  .person .hint { font-size: 18px; }
-  .person .number { font-size: 26px; font-weight: 700; margin-top: 8px; letter-spacing: 0.5px; }
-  .person .note { font-size: 12px; color: var(--muted); margin-top: 8px; }
-  .status-list { margin: 0; padding: 0; }
-  .status-list label {
-    display: flex; align-items: center; gap: 10px;
-    padding: 13px 4px;
-    border-bottom: 1px solid var(--line);
-    font-size: 14px; font-weight: 700;
-    cursor: pointer;
-  }
-  .status-list input { width: 18px; height: 18px; accent-color: var(--blue); }
-  .msg { margin-top: 14px; padding: 14px; border-radius: 6px; font-size: 16px; display: none; }
+    flex: 1; min-width: 0; width: 100%; padding: 15px 16px; font-size: 16px; font-family: inherit; font-weight: 500;
+    color: var(--text); border: 1.5px solid #ecd9c2; border-radius: 16px; background: #fffdf9;
+    box-shadow: inset 0 1px 2px rgba(120,70,20,.04); }
+  select { appearance: none; -webkit-appearance: none; padding-right: 42px; text-overflow: ellipsis;
+    background: #fffdf9 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%2312332d' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center; }
+  input:focus, select:focus { outline: 2px solid rgba(239,125,18,.45); outline-offset: 1px; }
+  button, a.btn { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 17px; border: 0;
+    border-radius: 18px; font-family: inherit; font-size: 19px; font-weight: 800; color: #fff; text-decoration: none; cursor: pointer; }
+  button:disabled { opacity: .55; cursor: default; }
+  #findBtn { background: linear-gradient(90deg, #ffa332, #cf5a0c); box-shadow: 0 8px 18px rgba(207,90,12,.3); margin-top: 6px; }
+  #findBtn .ico { width: 26px; height: 26px; stroke-width: 2.6; }
+  .opt { display: flex; align-items: center; gap: 12px; margin: 18px 4px 4px; font-size: 16px; font-weight: 500; }
+  input[type=checkbox] { appearance: none; -webkit-appearance: none; width: 26px; height: 26px; border-radius: 8px; flex: none; margin: 0;
+    background: var(--teal); display: grid; place-items: center; cursor: pointer; border: 2px solid var(--teal); }
+  input[type=checkbox]:not(:checked) { background: #fffdf9; border-color: #d9c3a6; }
+  input[type=checkbox]:checked::after { content: ""; width: 12px; height: 7px; border-left: 3px solid #fff; border-bottom: 3px solid #fff; transform: rotate(-45deg) translate(1px,-1px); }
+  .person { position: relative; overflow: hidden; margin-top: 16px; padding: 20px 16px 18px; text-align: center; border-radius: 24px;
+    background: linear-gradient(180deg, #eef3dc, #e4eecf); border: 1px solid #dfe8c9; }
+  .person::before, .person::after { content: ""; position: absolute; border-radius: 50%; background: #d5e6c1; opacity: .75; }
+  .person::before { width: 420px; height: 150px; left: -120px; bottom: -80px; }
+  .person::after { width: 380px; height: 140px; right: -150px; bottom: -85px; background: #cfe3bd; }
+  .person > * { position: relative; z-index: 1; }
+  .pill { display: inline-flex; align-items: center; gap: 10px; background: #fffaf0; padding: 9px 20px; border-radius: 999px;
+    font-weight: 700; font-size: 17px; color: var(--teal-d); box-shadow: 0 2px 6px rgba(60,80,20,.08); }
+  .pill .ico { width: 26px; height: 26px; }
+  .numrow { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 14px 0 10px; }
+  .number { font-size: 40px; font-weight: 800; letter-spacing: .5px; color: var(--teal-d); }
+  .spark { width: 36px; height: 36px; stroke: var(--orange); stroke-width: 3.2; stroke-linecap: round; fill: none; flex: none; }
+  .spark.r { transform: scaleX(-1); }
+  a.call { width: auto; max-width: 100%; margin: 0 auto; padding: 16px 70px; font-size: 24px; font-weight: 800;
+    background: linear-gradient(180deg, #14916f, #07574a); box-shadow: 0 8px 16px rgba(7,87,74,.3); }
+  a.call .ico { width: 30px; height: 30px; fill: currentColor; stroke: none; }
+  .note { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 15px; font-weight: 500; color: #2f5b45; }
+  .note .ico { width: 22px; height: 22px; }
+  .shead { display: flex; align-items: center; gap: 14px; background: #fbe6cc; border-radius: 16px; padding: 15px 18px; margin: 22px 0 14px;
+    font-size: 24px; font-weight: 800; }
+  .shead .ico { width: 34px; height: 34px; color: var(--orange); }
+  .status-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .tile { display: flex; align-items: center; gap: 10px; padding: 14px 12px; min-height: 66px; background: #fffdf9; border: 1.5px solid #f0e1cd;
+    border-radius: 16px; font-size: 16px; font-weight: 700; line-height: 1.2; cursor: pointer; box-shadow: 0 2px 6px rgba(120,70,20,.05); }
+  .tile .sico { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .tile span { flex: 1; min-width: 0; }
+  .tile input { appearance: none; -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #b9b2a8; margin: 0 0 0 0;
+    background: #fff; flex: none; order: -1; }
+  .tile input:checked { border-color: var(--teal); background: radial-gradient(circle, var(--teal) 0 45%, #fff 50%); }
+  .tile:has(input:checked) { border-color: var(--teal); background: #eaf6ef; }
+  #submitBtn { background: linear-gradient(180deg, #0a6a58, #064238); box-shadow: 0 8px 18px rgba(6,66,56,.3); margin-top: 22px; }
+  #submitBtn .ico { width: 28px; height: 28px; }
+  .msg { margin-top: 16px; padding: 14px 16px; border-radius: 16px; font-size: 16px; font-weight: 600; display: none; }
   .msg.ok  { display: block; background: var(--ok-bg);  color: var(--ok-text); }
   .msg.err { display: block; background: var(--err-bg); color: var(--err-text); }
-  .opt { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 14px; color: var(--muted); }
-  .hidden { display: none; }
+  .hidden { display: none !important; }
+  @media (max-width: 380px) { .frow { flex-direction: column; align-items: stretch; gap: 6px; } .frow .lab { width: auto; } .number { font-size: 32px; } a.call { padding: 16px 40px; } }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
+<div class="app">
+  <div class="top">
+    <svg class="wa" viewBox="0 0 32 32" aria-hidden="true"><path fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" d="M16 3.5A12.4 12.4 0 0 0 5.4 22.2L3.8 28.2l6.2-1.6A12.4 12.4 0 1 0 16 3.5z"/><path fill="#fff" d="M21.9 19.6c-.3-.2-1.9-.9-2.2-1s-.5-.2-.7.2-.8 1-1 1.2-.4.2-.7.1a8.6 8.6 0 0 1-4.3-3.7c-.3-.6.3-.5.9-1.7.1-.2 0-.4 0-.5l-1-2.3c-.2-.6-.5-.5-.7-.5h-.6a1.2 1.2 0 0 0-.9.4 3.700 3.700 0 0 0-1.1 2.700 6.400 6.400 0 0 0 1.300 3.400 14.700 14.700 0 0 0 5.700 5c2.100.9 2.900 1 3.900.8a3.300 3.300 0 0 0 2.200-1.500 2.700 2.700 0 0 0 .2-1.500c-.1-.2-.3-.3-.6-.4z"/></svg>
+    <div class="sep"></div>
     <h1>WhatsApp Calling</h1>
+  </div>
 
-    <label class="field" for="caller">Caller Name</label>
-    <input type="text" id="caller" autocomplete="name" placeholder="Your name">
+  <div class="sheet">
+    <div class="frow">
+      <label class="lab" for="caller"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Caller Name</label>
+      <input type="text" id="caller" autocomplete="name" placeholder="Your name">
+    </div>
 
-    <label class="field" for="city">Select City</label>
-    <select id="city"><option value="">Loading cities…</option></select>
+    <div class="frow">
+      <label class="lab" for="city"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>Select City</label>
+      <select id="city"><option value="">Loading cities…</option></select>
+    </div>
 
-    <button id="findBtn" type="button">Find Next Person</button>
+    <button id="findBtn" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 17 5-5-5-5M13 17l5-5-5-5"/></svg>Find Next Person</button>
 
     <div class="opt">
       <input type="checkbox" id="autoNext" checked>
@@ -105,17 +113,21 @@
     </div>
 
     <div id="person" class="person hidden">
-      <div class="hint">Next person to call</div>
-      <div class="number" id="number"></div>
-      <a class="btn call" id="callBtn" href="#">📞 Call</a>
-      <div class="note" id="reserveNote"></div>
+      <div class="pill"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Next person to call</div>
+      <div class="numrow">
+        <svg class="spark" viewBox="0 0 40 40" aria-hidden="true"><path d="M34 6 24 14M36 20H22M34 34 24 26" /></svg>
+        <div class="number" id="number"></div>
+        <svg class="spark r" viewBox="0 0 40 40" aria-hidden="true"><path d="M34 6 24 14M36 20H22M34 34 24 26" /></svg>
+      </div>
+      <a class="btn call" id="callBtn" href="#"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>Call</a>
+      <div><span class="note"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span id="reserveNote"></span></span></div>
     </div>
 
     <!-- only visible while a number is loaded -->
     <div id="statusSection" class="hidden">
-      <h2>Calling Status</h2>
+      <div class="shead"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Calling Status</div>
       <div class="status-list" id="statusList"></div>
-      <button id="submitBtn" type="button" disabled>Submit Status</button>
+      <button id="submitBtn" type="button" disabled><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7zM22 2 11 13"/></svg>Submit Status</button>
     </div>
 
     <div id="msg" class="msg"></div>
@@ -233,17 +245,40 @@
 
   /* ---------- statuses ---------- */
 
+  const ICONS = {
+    'Busy': ['#e8456b', '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>'],
+    'Call Received': ['#14a05a', '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/><path d="M14.05 2a9 9 0 0 1 8 7.94M14.05 6A5 5 0 0 1 18 10"/>'],
+    'Cut In Mid': ['#f29a1a', '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/>'],
+    'Duplicate': ['#2a7de1', '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'],
+    'Incoming Not Available': ['#7a4ee0', '<path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>'],
+    'Invalid': ['#f5a312', '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/>'],
+    'Not Received': ['#e0383e', '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>'],
+    'Switch Off': ['#2a7de1', '<path d="M18.4 6.6a9 9 0 1 1-12.8 0M12 2v10"/>'],
+    'Not Interested': ['#c92a2a', '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>']
+  };
+  const FALLBACK_ICON = ['#6f7c78', '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>'];
+
   function renderStatuses(list) {
     el.statusList.innerHTML = '';
     list.forEach((s, i) => {
       const label = document.createElement('label');
+      label.className = 'tile';
       const input = document.createElement('input');
       input.type = 'radio';
       input.name = 'status';
       input.value = s;
       input.id = 'st' + i;
+      const ic = ICONS[s] || FALLBACK_ICON;
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('class', 'sico');
+      svg.style.color = ic[0];
+      svg.innerHTML = ic[1];
+      const span = document.createElement('span');
+      span.textContent = s;
       label.appendChild(input);
-      label.appendChild(document.createTextNode(s));
+      label.appendChild(svg);
+      label.appendChild(span);
       el.statusList.appendChild(label);
     });
   }
